@@ -58,10 +58,13 @@ class ANQC_Capture {
             $matches
         ) ) {
             foreach ( $matches[0] as $notice_html ) {
+                $classes = self::extract_classes( $notice_html );
+
                 self::$notices[] = [
-                    'html'    => $notice_html,
-                    'screen'  => $screen_id,
-                    'classes' => self::extract_classes( $notice_html ),
+                    'html'     => $notice_html,
+                    'screen'   => $screen_id,
+                    'classes'  => $classes,
+                    'severity' => self::detect_severity( $classes ),
                 ];
             }
         }
@@ -75,6 +78,29 @@ class ANQC_Capture {
             return $match[1];
         }
         return '';
+    }
+
+    /**
+     * Detect notice severity based on CSS classes
+     */
+    private static function detect_severity( $classes ) {
+        if ( strpos( $classes, 'notice-error' ) !== false || strpos( $classes, 'error' ) !== false ) {
+            return 'Error';
+        }
+
+        if ( strpos( $classes, 'notice-warning' ) !== false ) {
+            return 'Warning';
+        }
+
+        if ( strpos( $classes, 'notice-info' ) !== false ) {
+            return 'Info';
+        }
+
+        if ( strpos( $classes, 'updated' ) !== false || strpos( $classes, 'notice-success' ) !== false ) {
+            return 'Success';
+        }
+
+        return 'Unknown';
     }
 
     /**

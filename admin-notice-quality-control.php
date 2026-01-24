@@ -1,11 +1,10 @@
 <?php
 /*
 Plugin Name: Admin Notice Quality Control
-Description: Inspect and analyze WordPress admin notices without modifying plugin behavior.
+Description: Inspect and analyze admin notices across WordPress admin screens.
 Version: 0.1.0
-Author: Your Name
+Author: WebTechee
 License: GPLv2 or later
-Text Domain: admin-notice-quality-control
 */
 
 if ( ! defined( 'ABSPATH' ) ) {

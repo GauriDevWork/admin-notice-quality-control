@@ -51,7 +51,7 @@ class ANQC_Admin_UI {
                                 <td><?php echo esc_html( $notice['screen'] ); ?></td>
                                 <td><?php echo esc_html( $notice['severity'] ); ?></td>
                                 <td><code><?php echo esc_html( $notice['classes'] ); ?></code></td>
-                                <td><?php echo esc_html( $notice['html'] ); ?></td>
+                                <td><?php echo esc_html( $notice['message'] ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

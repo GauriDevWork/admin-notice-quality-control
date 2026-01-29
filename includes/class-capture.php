@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ANQC_Capture {
 
     private static $notices = [];
+    private static $buffer_started = false;
 
     public static function init() {
         add_action( 'admin_notices', [ __CLASS__, 'capture_notices' ], 0 );
@@ -14,6 +15,11 @@ class ANQC_Capture {
     }
 
     public static function capture_notices() {
+        if ( self::$buffer_started ) {
+            return;
+        }
+
+        self::$buffer_started = true;
         ob_start();
         add_action( 'shutdown', [ __CLASS__, 'collect_buffer' ], 0 );
     }
@@ -29,8 +35,6 @@ class ANQC_Capture {
         }
 
         self::parse_notices( $html );
-
-        // Re-print original notices so admin UI is unchanged
         echo $html;
     }
 
@@ -45,13 +49,23 @@ class ANQC_Capture {
         );
 
         foreach ( $matches[0] as $notice_html ) {
+
+            $classes  = self::extract_classes( $notice_html );
+            $message  = trim( wp_strip_all_tags( $notice_html ) );
+            $severity = self::detect_severity( $classes );
+
+            $analysis = self::analyze_notice( $classes, $message, $severity );
+
             self::$notices[] = [
                 'screen'   => $screen_id,
-                'severity' => self::detect_severity( $notice_html ),
-                'classes'  => self::extract_classes( $notice_html ),
-                'message'  => trim( wp_strip_all_tags( $notice_html ) ),
+                'severity' => $severity,
+                'classes'  => $classes,
+                'message'  => $message,
+                'score'    => $analysis['score'],
+                'issues'   => $analysis['issues'],
             ];
         }
+
         if ( ! empty( self::$notices ) ) {
             self::store_notices( self::$notices );
         }
@@ -64,17 +78,55 @@ class ANQC_Capture {
         return '';
     }
 
-    private static function detect_severity( $html ) {
-        if ( strpos( $html, 'notice-error' ) !== false || strpos( $html, 'error' ) !== false ) {
+    private static function detect_severity( $classes ) {
+        if ( strpos( $classes, 'notice-error' ) !== false ) {
             return 'error';
         }
-        if ( strpos( $html, 'notice-warning' ) !== false ) {
+        if ( strpos( $classes, 'notice-warning' ) !== false ) {
             return 'warning';
         }
-        if ( strpos( $html, 'notice-success' ) !== false || strpos( $html, 'updated' ) !== false ) {
+        if ( strpos( $classes, 'notice-success' ) !== false || strpos( $classes, 'updated' ) !== false ) {
             return 'success';
         }
         return 'info';
+    }
+
+    /**
+     * Day 5 intelligence layer
+     */
+    private static function analyze_notice( $classes, $message, $severity ) {
+
+        $score  = 100;
+        $issues = [];
+
+        // Misused error severity
+        if ( $severity === 'error' && stripos( $message, 'error' ) === false ) {
+            $score -= 25;
+            $issues[] = 'Error severity without real error';
+        }
+
+        // Not dismissible
+        if ( strpos( $classes, 'is-dismissible' ) === false ) {
+            $score -= 15;
+            $issues[] = 'Not dismissible';
+        }
+
+        // Vague text
+        if ( strlen( $message ) < 20 ) {
+            $score -= 10;
+            $issues[] = 'Vague or low-information message';
+        }
+
+        // Inline styles (bad practice)
+        if ( strpos( $classes, 'style=' ) !== false ) {
+            $score -= 10;
+            $issues[] = 'Inline styles used';
+        }
+
+        return [
+            'score'  => max( 0, $score ),
+            'issues' => $issues,
+        ];
     }
 
     public static function get_notices() {
@@ -83,6 +135,6 @@ class ANQC_Capture {
     }
 
     private static function store_notices( $notices ) {
-        set_transient( 'anqc_notices', $notices, 5 * MINUTE_IN_SECONDS );
+        set_transient( 'anqc_notices', $notices, 10 * MINUTE_IN_SECONDS );
     }
 }

@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Admin Notice Quality Control
-Description: Inspect and analyze admin notices across WordPress admin screens.
+Description: Analyze and evaluate the quality of WordPress admin notices.
 Version: 0.1.0
-Author: WebTechee
+Author: Webtechee
 License: GPLv2 or later
 */
 
@@ -19,4 +19,13 @@ require_once ANQC_PATH . 'includes/class-admin-ui.php';
 add_action( 'plugins_loaded', function () {
     ANQC_Capture::init();
     new ANQC_Admin_UI();
+});
+
+/**
+ * Test notice (safe, removable)
+ */
+add_action( 'admin_notices', function () {
+    echo '<div class="notice notice-warning"><p>ANQC test notice</p></div>';
+    echo '<div class="notice notice-warning"><p>ANQC test notice 123</p></div>';
+
 });

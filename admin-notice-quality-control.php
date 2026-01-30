@@ -29,3 +29,12 @@ add_action( 'admin_notices', function () {
     echo '<div class="notice notice-warning"><p>ANQC test notice 123</p></div>';
 
 });
+
+add_action( 'admin_notices', function () {
+    echo '<div class="notice notice-warning is-dismissible"><p>Plugin test notice</p></div>';
+});
+
+
+add_action( 'admin_notices', function () {
+    echo '<div class="notice notice-info"><p>Theme test notice</p></div>';
+});

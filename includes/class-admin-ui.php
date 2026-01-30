@@ -41,6 +41,9 @@ class ANQC_Admin_UI {
                             <th>Message</th>
                             <th>Score</th>
                             <th>Issues</th>
+                            <th>Source</th>
+                            <th>Identifier</th>
+                            <th>Confidence</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,6 +62,15 @@ class ANQC_Admin_UI {
                                         echo esc_html( implode( ', ', $notice['issues'] ) );
                                     }
                                     ?>
+                                </td>
+                                <td><?php echo esc_html( ucfirst( $notice['source'] ) ); ?></td>
+
+                                <td>
+                                    <?php echo esc_html( $notice['source_id'] ); ?>
+                                </td>
+
+                                <td>
+                                    <?php echo esc_html( ucfirst( $notice['confidence'] ) ); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -56,13 +56,19 @@ class ANQC_Capture {
 
             $analysis = self::analyze_notice( $classes, $message, $severity );
 
+            $source = self::detect_source();
+
             self::$notices[] = [
-                'screen'   => $screen_id,
-                'severity' => $severity,
-                'classes'  => $classes,
-                'message'  => $message,
-                'score'    => $analysis['score'],
-                'issues'   => $analysis['issues'],
+                'screen'    => $screen_id,
+                'severity'  => $severity,
+                'classes'   => $classes,
+                'message'   => $message,
+                'score'     => $analysis['score'],
+                'issues'    => $analysis['issues'],
+                'source'    => $source['type'],
+                'source_id' => $source['identifier'],
+                'file'      => $source['file'],
+                'confidence'=> $source['confidence'],
             ];
         }
 
@@ -91,9 +97,54 @@ class ANQC_Capture {
         return 'info';
     }
 
-    /**
-     * Day 5 intelligence layer
-     */
+    private static function detect_source() {
+
+        $trace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+
+        foreach ( $trace as $step ) {
+
+            if ( empty( $step['file'] ) ) {
+                continue;
+            }
+
+            $file = wp_normalize_path( $step['file'] );
+
+            // Plugin
+            if ( strpos( $file, wp_normalize_path( WP_PLUGIN_DIR ) ) !== false ) {
+                $relative = str_replace( wp_normalize_path( WP_PLUGIN_DIR ) . '/', '', $file );
+                $parts    = explode( '/', $relative );
+
+                return [
+                    'type'      => 'plugin',
+                    'identifier'=> $parts[0],
+                    'file'      => $relative,
+                    'confidence'=> 'high',
+                ];
+            }
+
+            // Theme
+            if ( strpos( $file, wp_normalize_path( get_theme_root() ) ) !== false ) {
+                $relative = str_replace( wp_normalize_path( get_theme_root() ) . '/', '', $file );
+                $parts    = explode( '/', $relative );
+
+                return [
+                    'type'      => 'theme',
+                    'identifier'=> $parts[0],
+                    'file'      => $relative,
+                    'confidence'=> 'high',
+                ];
+            }
+        }
+
+        return [
+            'type'       => 'core',
+            'identifier' => 'wordpress',
+            'file'       => '',
+            'confidence' => 'low',
+        ];
+    }
+
+
     private static function analyze_notice( $classes, $message, $severity ) {
 
         $score  = 100;

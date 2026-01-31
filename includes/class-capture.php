@@ -188,4 +188,39 @@ class ANQC_Capture {
     private static function store_notices( $notices ) {
         set_transient( 'anqc_notices', $notices, 10 * MINUTE_IN_SECONDS );
     }
+
+    public static function get_source_summary() {
+
+        $notices = self::get_notices();
+        $summary = [];
+
+        foreach ( $notices as $notice ) {
+
+            $key = $notice['source'] . ':' . $notice['source_id'];
+
+            if ( ! isset( $summary[ $key ] ) ) {
+                $summary[ $key ] = [
+                    'source'     => $notice['source'],
+                    'id'         => $notice['source_id'],
+                    'count'      => 0,
+                    'totalScore' => 0,
+                    'issues'     => 0,
+                ];
+            }
+
+            $summary[ $key ]['count']++;
+            $summary[ $key ]['totalScore'] += $notice['score'];
+
+            if ( ! empty( $notice['issues'] ) ) {
+                $summary[ $key ]['issues'] += count( $notice['issues'] );
+            }
+        }
+
+        foreach ( $summary as &$item ) {
+            $item['averageScore'] = round( $item['totalScore'] / $item['count'] );
+        }
+
+        return $summary;
+    }
+
 }
